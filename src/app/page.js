@@ -3,6 +3,7 @@ import Link from "next/link";
 export default function Home() {
   const componentPages = [
     { href: "/carousel", name: "Carousel", description: "Explore previous/next slide controls and announcements." },
+    { href: "/collection-row", name: "Collection Row", description: "Browse a paged horizontal collection with keyboard-safe focus behavior." },
     { href: "/dialog", name: "Dialog / Modal", description: "Test focus management, trapping, and keyboard close behavior." },
     { href: "/toast", name: "Toast", description: "Try polite status updates and dismiss controls." },
     { href: "/link", name: "Link", description: "Compare accessible text link patterns and states." },
