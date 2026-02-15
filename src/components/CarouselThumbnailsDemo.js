@@ -314,7 +314,7 @@ function thumbnailButtonStyle(active) {
     height: 44,
     padding: 0,
     borderRadius: 10,
-    border: active ? "2px solid #111" : "1px solid rgba(0,0,0,0.35)",
+    border: active ? "2px solid #fff" : "1px solid rgba(0,0,0,0.35)",
     background: active ? "rgba(0,0,0,0.06)" : "transparent",
     cursor: "pointer",
   };

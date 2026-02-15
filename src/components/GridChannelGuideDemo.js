@@ -6,19 +6,12 @@ import { createPortal } from "react-dom";
 export function ChannelGuideGridDemo() {
   return (
     <div style={{ padding: 24, display: "grid", gap: 16 }}>
-      <button type="button">Focusable element before grid</button>
-
       <ChannelGuideGrid ariaLabel="Channel guide" />
-
-      <button type="button">Focusable element after grid</button>
     </div>
   );
 }
 
 export function ChannelGuideGrid({ ariaLabel = "Channel guide" }) {
-  const gridId = React.useId();
-
-  // Demo data: 5 channels x 5 program columns (Now + 4 future).
   const columns = React.useMemo(
     () => [
       { key: "now", label: "Now" },
@@ -32,35 +25,37 @@ export function ChannelGuideGrid({ ariaLabel = "Channel guide" }) {
 
   const channels = React.useMemo(() => DEMO_CHANNELS, []);
 
-  // Selected row = the channel currently playing.
+  // Selected row = currently playing channel
   const [selectedRow, setSelectedRow] = React.useState(1);
 
-  // Focused cell coordinates (row, col):
-  // col 0 = channel rowheader column
-  // col 1 = "Now"
-  // col 2.. = future listings
-  const [focusPos, setFocusPos] = React.useState(() => ({
-    row: selectedRow,
-    col: 1,
-  }));
+  // Roving focus position (row, col)
+  // col 0 = channel buttons column, col 1 = Now, col 2.. = future
+  const [pos, setPos] = React.useState({ row: selectedRow, col: 1 });
 
-  // Persist last-focused cell so Tab out / Tab back in restores.
-  const lastFocusRef = React.useRef({ row: selectedRow, col: 1 });
+  // Last-focused cell for Tab out/in restoration
+  const lastPosRef = React.useRef({ row: selectedRow, col: 1 });
 
-  // Refs for roving tabindex
-  const cellRefs = React.useRef({}); // key: `${row}-${col}` -> element
+  // Button refs keyed by "r-c"
+  const btnRefs = React.useRef({}); // { "1-2": HTMLButtonElement }
 
-  // Details dialog
+  // Details modal
   const [dialog, setDialog] = React.useState(null);
+  const openerRef = React.useRef(null);
 
-  function setCellRef(row, col, el) {
-    if (!el) return;
-    cellRefs.current[`${row}-${col}`] = el;
+  const totalCols = columns.length + 1; // +1 channel column
+  const rowCount = channels.length + 1; // +1 header row
+
+  function keyOf(row, col) {
+    return `${row}-${col}`;
   }
 
-  function focusCell(row, col) {
-    const key = `${row}-${col}`;
-    const el = cellRefs.current[key];
+  function setBtnRef(row, col, el) {
+    if (!el) return;
+    btnRefs.current[keyOf(row, col)] = el;
+  }
+
+  function focusButton(row, col) {
+    const el = btnRefs.current[keyOf(row, col)];
     if (el && typeof el.focus === "function") el.focus();
   }
 
@@ -68,51 +63,69 @@ export function ChannelGuideGrid({ ariaLabel = "Channel guide" }) {
     return Math.max(min, Math.min(max, n));
   }
 
-  function moveFocus(deltaRow, deltaCol) {
-    const nextRow = clamp(focusPos.row + deltaRow, 0, channels.length - 1);
-    const nextCol = clamp(focusPos.col + deltaCol, 0, columns.length); // +1 because channel column is 0, programs start at 1
-    const next = { row: nextRow, col: nextCol };
-
-    lastFocusRef.current = next;
-    setFocusPos(next);
-
-    // After state updates, move DOM focus
-    requestAnimationFrame(() => {
-      focusCell(next.row, next.col);
-    });
+  function commitPos(next) {
+    lastPosRef.current = next;
+    setPos(next);
+    requestAnimationFrame(() => focusButton(next.row, next.col));
   }
 
-  function onGridFocusCapture() {
-    // When tabbing into the grid, land on last focused cell.
-    const last = lastFocusRef.current;
-    setFocusPos(last);
-    requestAnimationFrame(() => {
-      focusCell(last.row, last.col);
-    });
+  function move(deltaRow, deltaCol) {
+    const nextRow = clamp(pos.row + deltaRow, 0, channels.length - 1);
+    const nextCol = clamp(pos.col + deltaCol, 0, columns.length); // 0..5
+    commitPos({ row: nextRow, col: nextCol });
   }
 
-  function onCellFocus(row, col) {
+  function onGridFocusCapture(e) {
+    // Only when entering grid from outside
+    const from = e.relatedTarget;
+    if (from && e.currentTarget.contains(from)) return;
+
+    const last = lastPosRef.current;
+    setPos(last);
+    requestAnimationFrame(() => focusButton(last.row, last.col));
+  }
+
+  function onButtonFocus(row, col) {
     const next = { row, col };
-    lastFocusRef.current = next;
-    setFocusPos(next);
+    lastPosRef.current = next;
+    setPos(next);
+  }
+
+  function onButtonPointerDown(row, col) {
+    // Ensure roving state updates before click/focus so outline appears immediately
+    const next = { row, col };
+    lastPosRef.current = next;
+    setPos(next);
   }
 
   function openDetails(payload) {
+    openerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setDialog(payload);
   }
 
   function closeDetails() {
     setDialog(null);
+    const opener = openerRef.current;
+    openerRef.current = null;
+
+    requestAnimationFrame(() => {
+      if (opener && opener.isConnected && typeof opener.focus === "function") {
+        opener.focus();
+      } else {
+        const last = lastPosRef.current;
+        focusButton(last.row, last.col);
+      }
+    });
   }
 
-  function activateCell(row, col) {
+  function activate(row, col) {
     const channel = channels[row];
 
     if (col === 0) {
-      // Channel “details”
       openDetails({
         title: `Channel details: ${channel.name}`,
-        body: `This is a placeholder details view for ${channel.name}.`,
+        body: `Placeholder details view for ${channel.name}.`,
       });
       return;
     }
@@ -123,66 +136,89 @@ export function ChannelGuideGrid({ ariaLabel = "Channel guide" }) {
       return;
     }
 
-    // Future: program details
-    const program = channel.programs[col - 1]; // programs indexed by columns (now + future)
+    const program = channel.programs[col - 1];
     openDetails({
-      title: `Program details`,
+      title: "Program details",
       body: `${channel.name} — ${program.title}. ${program.meta}. ${program.timeText}`,
     });
   }
 
-  function onCellKeyDown(e) {
+  function onButtonKeyDown(e) {
     switch (e.key) {
       case "ArrowLeft":
         e.preventDefault();
-        moveFocus(0, -1);
+        move(0, -1);
         break;
       case "ArrowRight":
         e.preventDefault();
-        moveFocus(0, 1);
+        move(0, 1);
         break;
       case "ArrowUp":
         e.preventDefault();
-        moveFocus(-1, 0);
+        move(-1, 0);
         break;
       case "ArrowDown":
         e.preventDefault();
-        moveFocus(1, 0);
+        move(1, 0);
         break;
       case "Home":
         e.preventDefault();
-        // Start of row (channel column)
-        moveFocus(0, -999);
+        commitPos({ row: pos.row, col: 0 });
         break;
       case "End":
         e.preventDefault();
-        // End of row (last time column)
-        moveFocus(0, 999);
+        commitPos({ row: pos.row, col: columns.length });
         break;
       case "Enter":
       case " ":
         e.preventDefault();
-        activateCell(focusPos.row, focusPos.col);
+        activate(pos.row, pos.col);
         break;
       default:
         break;
     }
   }
 
-  // Keep focusPos row in sync if selectedRow changes and focus was initialized from it.
-  React.useEffect(() => {
-    // If user tunes via click/enter on Now column, we do not forcibly move focus elsewhere.
-    // Selected state is visual/semantic only.
-  }, [selectedRow]);
-
-  const totalCols = columns.length + 1; // +1 for channel column
+  const selectedChannel = channels[selectedRow] ?? channels[0];
+  const selectedProgram = selectedChannel?.programs?.[0];
 
   return (
     <div style={{ display: "grid", gap: 8 }}>
+      <section
+        aria-label="TV player preview"
+        aria-live="polite"
+        style={{
+          borderRadius: 12,
+          padding: 16,
+          color: "#f7fafc",
+          background:
+            "linear-gradient(135deg, rgba(16,24,40,0.98) 0%, rgba(30,41,59,0.98) 100%)",
+          border: "1px solid rgba(148,163,184,0.35)",
+          boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.04)",
+        }}
+      >
+        <p style={{ margin: 0, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.85 }}>
+          Live TV (Demo)
+        </p>
+        <p style={{ margin: "6px 0 0", fontSize: 22, fontWeight: 700 }}>
+          {selectedProgram?.title ?? "No program selected"}
+        </p>
+        <p style={{ margin: "6px 0 0", fontSize: 14, opacity: 0.9 }}>
+          {selectedChannel ? `Channel: ${selectedChannel.name}` : "Channel unavailable"}
+        </p>
+        <p style={{ margin: "4px 0 0", fontSize: 13, opacity: 0.75 }}>
+          {selectedProgram ? `${selectedProgram.meta} • ${selectedProgram.timeText}` : ""}
+        </p>
+      </section>
+
+      <button type="button" style={linkButtonStyle}>
+        Focusable element before grid
+      </button>
+
       <div
         role="grid"
         aria-label={ariaLabel}
-        aria-rowcount={channels.length + 1}
+        aria-rowcount={rowCount}
         aria-colcount={totalCols}
         onFocusCapture={onGridFocusCapture}
         style={{
@@ -192,7 +228,7 @@ export function ChannelGuideGrid({ ariaLabel = "Channel guide" }) {
           background: "#fff",
         }}
       >
-        {/* Header row */}
+        {/* Header row (static, not focusable) */}
         <div role="row" style={rowStyle(true)}>
           <div role="columnheader" style={headerCellStyle}>
             Channel
@@ -206,58 +242,64 @@ export function ChannelGuideGrid({ ariaLabel = "Channel guide" }) {
 
         {/* Data rows */}
         {channels.map((ch, rowIndex) => {
-          const isSelectedRow = rowIndex === selectedRow;
+          const isSelected = rowIndex === selectedRow;
 
           return (
             <div
               key={ch.id}
               role="row"
-              aria-selected={isSelectedRow ? "true" : undefined}
-              style={rowStyle(false, isSelectedRow)}
+              aria-selected={isSelected ? "true" : undefined}
+              style={rowStyle(false, isSelected)}
             >
-              {/* Channel column (rowheader) */}
-              <button
-                type="button"
-                role="rowheader"
-                aria-label={`${ch.name}${isSelectedRow ? ", currently playing" : ""}`}
-                tabIndex={focusPos.row === rowIndex && focusPos.col === 0 ? 0 : -1}
-                ref={(el) => setCellRef(rowIndex, 0, el)}
-                onFocus={() => onCellFocus(rowIndex, 0)}
-                onKeyDown={onCellKeyDown}
-                onClick={() => activateCell(rowIndex, 0)}
-                style={cellButtonStyle(isSelectedRow)}
-              >
-                <span style={{ fontWeight: 650 }}>{ch.name}</span>
-              </button>
+              {/* Rowheader cell */}
+              <div role="rowheader" style={cellContainerStyle(isSelected)}>
+                <button
+                  type="button"
+                  tabIndex={pos.row === rowIndex && pos.col === 0 ? 0 : -1}
+                  ref={(el) => setBtnRef(rowIndex, 0, el)}
+                  onPointerDown={() => onButtonPointerDown(rowIndex, 0)}
+                  onFocus={() => onButtonFocus(rowIndex, 0)}
+                  onKeyDown={onButtonKeyDown}
+                  onClick={() => activate(rowIndex, 0)}
+                  aria-label={`${ch.name}${isSelected ? ", currently playing" : ""}`}
+                  style={cellButtonStyle}
+                >
+                  <span style={{ fontWeight: 650 }}>{ch.name}</span>
+                </button>
+              </div>
 
               {/* Program cells */}
               {ch.programs.map((p, programIndex) => {
-                const colIndex = programIndex + 1; // program columns start at 1
-                const isActive = focusPos.row === rowIndex && focusPos.col === colIndex;
-                const isNowCol = colIndex === 1;
+                const colIndex = programIndex + 1; // 1..5
+                const isNow = colIndex === 1;
 
-                // For SR: expose “Now” vs time label + position
-                const label = isNowCol
+                const label = isNow
                   ? `Now: ${p.title}. ${p.meta}. ${p.timeText}`
                   : `${columns[colIndex - 1].label}: ${p.title}. ${p.meta}. ${p.timeText}`;
 
                 return (
-                  <button
+                  <div
                     key={`${ch.id}-${p.id}`}
-                    type="button"
                     role="gridcell"
-                    aria-label={label}
-                    tabIndex={isActive ? 0 : -1}
-                    ref={(el) => setCellRef(rowIndex, colIndex, el)}
-                    onFocus={() => onCellFocus(rowIndex, colIndex)}
-                    onKeyDown={onCellKeyDown}
-                    onClick={() => activateCell(rowIndex, colIndex)}
-                    style={programCellStyle(isSelectedRow, isNowCol)}
+                    style={cellContainerStyle(isSelected, isNow)}
                   >
-                    <div style={{ fontWeight: 650, lineHeight: 1.2 }}>{p.title}</div>
-                    <div style={{ opacity: 0.8, fontSize: 13 }}>{p.meta}</div>
-                    <div style={{ opacity: 0.8, fontSize: 13 }}>{p.timeText}</div>
-                  </button>
+                    <button
+                      type="button"
+                      tabIndex={pos.row === rowIndex && pos.col === colIndex ? 0 : -1}
+                      ref={(el) => setBtnRef(rowIndex, colIndex, el)}
+                      onPointerDown={() => onButtonPointerDown(rowIndex, colIndex)}
+                      onFocus={() => onButtonFocus(rowIndex, colIndex)}
+                      onKeyDown={onButtonKeyDown}
+                      onClick={() => activate(rowIndex, colIndex)}
+                      aria-label={label}
+                      style={cellButtonStyle}
+                    >
+                      {/* Visible content is fine. If VO still doubles here, wrap this in aria-hidden and keep aria-label. */}
+                      <div style={{ fontWeight: 650, lineHeight: 1.2 }}>{p.title}</div>
+                      <div style={{ opacity: 0.8, fontSize: 13 }}>{p.meta}</div>
+                      <div style={{ opacity: 0.8, fontSize: 13 }}>{p.timeText}</div>
+                    </button>
+                  </div>
                 );
               })}
             </div>
@@ -265,13 +307,12 @@ export function ChannelGuideGrid({ ariaLabel = "Channel guide" }) {
         })}
       </div>
 
+      <button type="button" style={linkButtonStyle}>
+        Focusable element after grid
+      </button>
+
       {dialog ? (
-        <ModalDialog
-          open={true}
-          title={dialog.title}
-          description={dialog.body}
-          onClose={closeDetails}
-        >
+        <ModalDialog open={true} title={dialog.title} description={dialog.body} onClose={closeDetails}>
           <button type="button" onClick={closeDetails}>
             Close
           </button>
@@ -281,23 +322,14 @@ export function ChannelGuideGrid({ ariaLabel = "Channel guide" }) {
   );
 }
 
-/* Minimal modal for demo (use your dialog.modal pattern in real use) */
+/* Minimal modal for demo (use dialog.modal pattern in real use) */
 function ModalDialog({ open, title, description, onClose, children }) {
   const titleId = React.useId();
   const descId = React.useId();
   const dialogRef = React.useRef(null);
-  const openerRef = React.useRef(null);
-
-  React.useLayoutEffect(() => {
-    if (!open) return;
-    openerRef.current = document.activeElement;
-  }, [open]);
 
   React.useEffect(() => {
-    if (!open) {
-      if (openerRef.current && openerRef.current.focus) openerRef.current.focus();
-      return;
-    }
+    if (!open) return;
     if (dialogRef.current) dialogRef.current.focus();
   }, [open]);
 
@@ -349,7 +381,9 @@ function ModalDialog({ open, title, description, onClose, children }) {
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
           <div style={{ minWidth: 0 }}>
-            <h2 id={titleId} style={{ margin: 0 }}>{title}</h2>
+            <h2 id={titleId} style={{ margin: 0 }}>
+              {title}
+            </h2>
             {description ? (
               <p id={descId} style={{ marginTop: 8, marginBottom: 0 }}>
                 {description}
@@ -374,7 +408,9 @@ function ModalDialog({ open, title, description, onClose, children }) {
               lineHeight: 1,
             }}
           >
-            <span aria-hidden="true" style={{ fontSize: 18 }}>×</span>
+            <span aria-hidden="true" style={{ fontSize: 18 }}>
+              ×
+            </span>
           </button>
         </div>
 
@@ -390,7 +426,6 @@ function rowStyle(isHeader, isSelectedRow) {
   return {
     display: "grid",
     gridTemplateColumns: "220px repeat(5, minmax(0, 1fr))",
-    gap: 0,
     background: isHeader ? "rgba(0,0,0,0.06)" : "#fff",
     borderTop: isHeader ? "none" : "1px solid rgba(0,0,0,0.1)",
     outline: isSelectedRow ? "2px solid rgba(0,0,0,0.35)" : "none",
@@ -405,28 +440,41 @@ const headerCellStyle = {
   borderRight: "1px solid rgba(0,0,0,0.1)",
 };
 
-function cellButtonStyle(isSelectedRow) {
+function cellContainerStyle(isSelectedRow, isNow) {
   return {
-    padding: 10,
-    textAlign: "left",
-    border: "none",
-    background: isSelectedRow ? "rgba(0,0,0,0.03)" : "transparent",
     borderRight: "1px solid rgba(0,0,0,0.1)",
-    cursor: "pointer",
+    background: isNow ? "rgba(0,0,0,0.06)" : isSelectedRow ? "rgba(0,0,0,0.03)" : "transparent",
   };
 }
 
-function programCellStyle(isSelectedRow, isNowCol) {
-  return {
-    padding: 10,
-    textAlign: "left",
-    border: "none",
-    background: isNowCol ? "rgba(0,0,0,0.06)" : "transparent",
-    borderRight: "1px solid rgba(0,0,0,0.1)",
-    cursor: "pointer",
-    outlineOffset: 2,
-  };
-}
+const cellButtonStyle = {
+  width: "100%",
+  height: "100%",
+  minHeight: "100%",
+  boxSizing: "border-box",
+  display: "grid",
+  gap: 2,
+  padding: 10,
+  textAlign: "left",
+  border: "none",
+  background: "transparent",
+  cursor: "pointer",
+  borderRadius: 0,
+  outlineOffset: 2,
+};
+
+const linkButtonStyle = {
+  border: "none",
+  padding: 0,
+  margin: 0,
+  background: "transparent",
+  color: "#1d4ed8",
+  textDecoration: "underline",
+  font: "inherit",
+  cursor: "pointer",
+  justifySelf: "start",
+  width: "auto",
+};
 
 /* Demo data */
 const DEMO_CHANNELS = [
