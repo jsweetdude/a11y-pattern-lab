@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CarouselDotsDemo } from "@/components/CarouselDotsDemo";
+import { CarouselThumbnailsDemo } from "@/components/CarouselThumbnailsDemo";
 
 export default function CarouselPage() {
   return (
@@ -16,7 +17,7 @@ export default function CarouselPage() {
       </section>
       <section aria-labelledby="carousel-thumbnail-navigation">
         <h2 id="carousel-thumbnail-navigation">Carousel: Thumbnail Navigation</h2>
-        <p>Thumbnail carousel demo coming soon.</p>
+        <CarouselThumbnailsDemo ariaLabel="Featured shows" />
       </section>
     </main>
   );

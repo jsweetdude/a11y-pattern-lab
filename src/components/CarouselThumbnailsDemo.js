@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Pause, Play } from "lucide-react";
 
-export function CarouselDotsDemo({
+export function CarouselThumbnailsDemo({
   ariaLabel = "Featured content",
   items = DEFAULT_ITEMS,
   autoplay = true,
@@ -93,14 +93,10 @@ export function CarouselDotsDemo({
       // Do not rotate if user paused manually.
       // (If you want “Play” to resume, that’s handled by togglePause.)
       goTo((prev) => {
-        // React state setter form not used here; keep simple:
         return prev;
       });
     }, intervalMs);
 
-    // The above setInterval can’t see “index” reliably if we keep it simple,
-    // so we rotate by scheduling a next tick that uses current state:
-    // We’ll do it with a functional update to avoid stale closures.
     window.clearInterval(timerRef.current);
     timerRef.current = window.setInterval(() => {
       setIndex((i) => ((i + 1) % count));
@@ -169,7 +165,7 @@ export function CarouselDotsDemo({
             gridTemplateColumns: "1fr",
             alignItems: "end",
             minHeight: 400,
-            padding: "16px 72px 40px",
+            padding: "16px 72px 72px",
             backgroundImage: active.image ? `url(${active.image})` : undefined,
             backgroundSize: "cover",
             backgroundPosition: "center",
@@ -229,34 +225,47 @@ export function CarouselDotsDemo({
         >
           ›
         </button>
-      </div>
 
-      {/* Controls row below the viewport */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginTop: 12,
-        }}
-      >
-        <div style={{ display: "flex", gap: 8 }} aria-label="Choose a slide">
-          {items.map((_, i) => {
-            const isActive = i === index;
-            return (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  pause();
-                  goTo(i);
-                }}
-                aria-label={`Go to slide ${i + 1}`}
-                aria-current={isActive ? "true" : undefined}
-                style={dotStyle(isActive)}
-              />
-            );
-          })}
+        {/* Thumbnail navigation overlay (inside viewport, outside slide node) */}
+        <div
+          style={{
+            position: "absolute",
+            right: 12,
+            bottom: 12,
+            zIndex: 2,
+          }}
+        >
+          <div style={{ display: "flex", gap: 10 }} aria-label="Choose a slide">
+            {items.map((item, i) => {
+              const isActive = i === index;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    pause();
+                    goTo(i);
+                  }}
+                  aria-label={`Go to slide ${i + 1}: ${item.title}`}
+                  aria-current={isActive ? "true" : undefined}
+                  style={thumbnailButtonStyle(isActive)}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: 10,
+                      backgroundImage: item.thumbnail ? `url(${item.thumbnail})` : undefined,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  />
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>
@@ -299,13 +308,14 @@ const pauseButtonStyle = {
   cursor: "pointer",
 };
 
-function dotStyle(active) {
+function thumbnailButtonStyle(active) {
   return {
-    width: 12,
-    height: 12,
-    borderRadius: 999,
-    border: "1px solid rgba(0,0,0,0.35)",
-    background: active ? "#111" : "rgba(0,0,0,0.18)",
+    width: 72,
+    height: 44,
+    padding: 0,
+    borderRadius: 10,
+    border: active ? "2px solid #111" : "1px solid rgba(0,0,0,0.35)",
+    background: active ? "rgba(0,0,0,0.06)" : "transparent",
     cursor: "pointer",
   };
 }
@@ -316,17 +326,20 @@ const DEFAULT_ITEMS = [
     description: "A chaotic dispute spirals. Watch the latest episode now.",
     href: "#",
     image: "https://picsum.photos/seed/hero-1/1200/600",
+    thumbnail: "https://picsum.photos/seed/thumb-1/240/140",
   },
   {
     title: "UCLA at Michigan",
     description: "Tip-off at 12:45 PM ET. Catch it live.",
     href: "#",
     image: "https://picsum.photos/seed/hero-2/1200/600",
+    thumbnail: "https://picsum.photos/seed/thumb-2/240/140",
   },
   {
     title: "Fire Country",
     description: "A risky mission tests loyalties and nerves.",
     href: "#",
     image: "https://picsum.photos/seed/hero-3/1200/600",
+    thumbnail: "https://picsum.photos/seed/thumb-3/240/140",
   },
 ];

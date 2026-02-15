@@ -103,7 +103,6 @@ export function ModalDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        aria-describedby={description ? descId : undefined}
         tabIndex={-1}
         style={{
           width: "min(560px, 100%)",
@@ -127,7 +126,7 @@ export function ModalDialog({
               {title}
             </h2>
             {description ? (
-              <p id={descId} style={{ marginTop: 8, marginBottom: 0 }}>
+              <p style={{ marginTop: 8, marginBottom: 0 }}>
                 {description}
               </p>
             ) : null}
