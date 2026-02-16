@@ -7,7 +7,7 @@ export default function DialogPage() {
       <p>
         <Link href="/">Back to home</Link>
       </p>
-      <h1>Dialog / Modal</h1>
+      <h1>Dialog (Modal)</h1>
       <DialogDemo />
       <section className="notes-panel" aria-labelledby="dialog-notes-title">
         <h2 id="dialog-notes-title">Pattern notes</h2>

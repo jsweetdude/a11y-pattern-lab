@@ -162,6 +162,7 @@ export function CarouselDotsDemo({
 
         {/* Slide */}
         <div
+          role="group"
           aria-roledescription="slide"
           aria-label={`${index + 1} of ${count}`}
           style={{
