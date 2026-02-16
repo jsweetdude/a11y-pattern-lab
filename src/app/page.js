@@ -2,6 +2,7 @@ import Link from "next/link";
 
 export default function Home() {
   const componentPages = [
+    { href: "/button-basic", name: "Button (Basic)", description: "Review accessible default, icon, and disabled button usage." },
     { href: "/carousel", name: "Carousel", description: "Explore previous/next slide controls and announcements." },
     { href: "/collection-row", name: "Collection Row", description: "Browse a paged horizontal collection with keyboard-safe focus behavior." },
     { href: "/dialog", name: "Dialog (Modal)", description: "Test focus management, trapping, and keyboard close behavior." },
