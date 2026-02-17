@@ -172,3 +172,54 @@ button:hover {
   background: #fff;
   color: var(--foreground);
 }
+
+.accordion-demo {
+  margin-top: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #fff;
+}
+
+.accordion-item + .accordion-item {
+  border-top: 1px solid var(--border);
+}
+
+.accordion-heading {
+  margin: 0;
+}
+
+.accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  font-weight: 600;
+  background: var(--surface);
+  padding: 0.875rem 1rem;
+}
+
+.accordion-trigger:hover {
+  background: #eef2ff;
+  border-color: transparent;
+}
+
+.accordion-icon {
+  flex-shrink: 0;
+  min-width: 1.25rem;
+  text-align: center;
+  color: #475569;
+}
+
+.accordion-panel {
+  padding: 0.875rem 1rem 1rem;
+  background: #fff;
+}
+
+.accordion-panel p + p {
+  margin-top: 0.5rem;
+}

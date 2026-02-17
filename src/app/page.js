@@ -2,6 +2,7 @@ import Link from "next/link";
 
 export default function Home() {
   const componentPages = [
+    { href: "/accordion", name: "Accordion", description: "Explore single-expand accordion headings and region semantics." },
     { href: "/button-basic", name: "Button (Basic)", description: "Review accessible default, icon, and disabled button usage." },
     { href: "/button-toggle", name: "Button (Toggle)", description: "Practice toggle button state semantics and labeling patterns." },
     { href: "/carousel", name: "Carousel", description: "Explore previous/next slide controls and announcements." },
