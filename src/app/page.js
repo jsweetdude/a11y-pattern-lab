@@ -2,6 +2,7 @@ import Link from "next/link";
 
 export default function Home() {
   const componentPages = [
+    { href: "/account-menu", name: "Account Menu", description: "Explore disclosure menu semantics, focus management, and keyboard close behavior." },
     { href: "/accordion", name: "Accordion", description: "Explore single-expand accordion headings and region semantics." },
     { href: "/button-basic", name: "Button (Basic)", description: "Review accessible default, icon, and disabled button usage." },
     { href: "/button-toggle", name: "Button (Toggle)", description: "Practice toggle button state semantics and labeling patterns." },
@@ -10,6 +11,7 @@ export default function Home() {
     { href: "/dialog", name: "Dialog (Modal)", description: "Test focus management, trapping, and keyboard close behavior." },
     { href: "/grid", name: "Grid (Interactive)", description: "Try channel guide keyboard navigation and cell interactions." },
     { href: "/link", name: "Link", description: "Compare accessible text link patterns and states." },
+    { href: "/switch", name: "Switch", description: "Practice switch semantics with checked state and keyboard activation." },
     { href: "/toast", name: "Toast", description: "Try polite status updates and dismiss controls." },
   ];
 

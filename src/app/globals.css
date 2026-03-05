@@ -223,3 +223,138 @@ button:hover {
 .accordion-panel p + p {
   margin-top: 0.5rem;
 }
+
+.account-menu-demo {
+  margin-top: 1rem;
+  position: relative;
+  display: inline-block;
+}
+
+#account-menu {
+  list-style: none;
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  min-width: 12rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
+  padding: 0.25rem 0;
+}
+
+#account-menu li a,
+#account-menu li button {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.875rem;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  text-decoration: none;
+  color: var(--foreground);
+}
+
+#account-menu li a:hover,
+#account-menu li button:hover {
+  background: var(--surface);
+  border-color: transparent;
+}
+
+.switch-demo {
+  margin-top: 1rem;
+}
+
+.switch-demo fieldset {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.switch-demo legend {
+  padding: 0 0.25rem;
+  font-weight: 600;
+}
+
+.switch-demo #playback-desc {
+  margin-bottom: 0.5rem;
+}
+
+.switch-demo [role="switch"] {
+  margin: 2px;
+  padding: 4px 4px 8px 8px;
+  border: 0 solid #005a9c;
+  border-radius: 5px;
+  width: 15em;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.switch-demo [role="switch"] .label {
+  display: inline-block;
+  width: 8em;
+}
+
+.switch-demo [role="switch"] .switch {
+  position: relative;
+  display: inline-block;
+  border: 2px solid black;
+  border-radius: 12px;
+  height: 20px;
+  width: 40px;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.switch-demo [role="switch"] .switch span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: inline-block;
+  border: 2px solid black;
+  border-radius: 8px;
+  height: 12px;
+  width: 12px;
+  background: black;
+}
+
+.switch-demo [role="switch"][aria-checked="true"] .switch span {
+  left: 21px;
+  background: green;
+  border-color: green;
+}
+
+.switch-demo [role="switch"] .on {
+  display: none;
+  min-width: 2ch;
+}
+
+.switch-demo [role="switch"] .off {
+  display: inline;
+  min-width: 2ch;
+}
+
+.switch-demo [role="switch"][aria-checked="true"] .on {
+  display: inline;
+}
+
+.switch-demo [role="switch"][aria-checked="true"] .off {
+  display: none;
+}
+
+.switch-demo [role="switch"]:focus,
+.switch-demo [role="switch"]:hover {
+  padding: 2px 2px 6px 6px;
+  border-width: 2px;
+  outline: none;
+  background-color: #def;
+  cursor: pointer;
+}
+
+.switch-demo [role="switch"]:focus span.switch {
+  background-color: white;
+}
